@@ -13,10 +13,18 @@ return new class extends Migration
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 100);
+            $table->unsignedBigInteger('adviser_id');
+            $table->string('first_name', 100);
+            $table->string('last_name', 100);
             $table->string('email', 150)->nullable();
             $table->string('phone', 50)->nullable();
             $table->timestamps();
+
+            // FK
+            $table->foreign('adviser_id')
+                ->references('id')
+                ->on('advisers')
+                ->onDelete('cascade');
         });
     }
 

@@ -31,6 +31,11 @@ class Adviser extends Authenticatable
         return $this->hasMany(HomeLoan::class);
     }
 
+    public function clients(): HasMany
+    {
+        return $this->hasMany(Client::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
