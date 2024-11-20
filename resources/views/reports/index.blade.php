@@ -23,15 +23,15 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($products as $product)
                         <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ $product->product_type }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ $product->productType }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                @if($product->product_type === 'Cash Loan')
-                                    ${{ number_format($product->product_value, 2) }}
-                                @elseif($product->product_type === 'Home Loan')
-                                    ${{ number_format($product->product_value, 2) }}
+                                @if($product->productType === 'Cash Loan')
+                                    ${{ number_format($product->productValue, 2) }}
+                                @elseif($product->productType === 'Home Loan')
+                                    ${{ number_format($product->productValue, 2) }}
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ $product->created_at->format('Y-m-d') }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ $product->createdAt->format('Y-m-d') }}</td>
                         </tr>
                     @empty
                         <tr>

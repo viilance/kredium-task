@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCashLoanRequest;
+use App\Http\Requests\UpdateCashLoanRequest;
 use App\Models\CashLoan;
 use App\Models\Client;
-use Illuminate\Http\Request;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\RedirectResponse;
 
 class CashLoanController extends Controller
 {
@@ -13,53 +16,41 @@ class CashLoanController extends Controller
         $this->middleware('auth');
     }
 
-    public function store(Request $request, $clientId)
+    /**
+     * @param StoreCashLoanRequest $request
+     * @param Client $client
+     * @return RedirectResponse
+     */
+    public function store(StoreCashLoanRequest $request, Client $client): RedirectResponse
     {
-        $client = Client::findOrFail($clientId);
-
-        if ($client->adviser_id !== auth()->id()) {
-            abort(403);
-        }
-
-        $request->validate([
-            'loan_amount' => 'required|numeric|min:0',
-        ]);
-
-        if ($client->cashLoan) {
-            return back()->withErrors(['loan' => 'This client already has a Cash Loan.'])->withInput();
-        }
-
-        CashLoan::create([
-            'client_id' => $client->id,
-            'adviser_id' => auth()->id(),
+        $cashLoan = new CashLoan([
             'loan_amount' => $request->input('loan_amount'),
         ]);
+        $cashLoan->client()->associate($client);
+        $cashLoan->adviser()->associate($request->user());
+        $cashLoan->save();
 
-        return redirect()->route('clients.edit', $client->id)->with('success', 'Cash Loan created successfully');
+        return redirect()->route('clients.edit', $client->id)
+            ->with('success', 'Cash Loan created successfully');
     }
 
-    public function update(Request $request, $clientId)
+    /**
+     * @param UpdateCashLoanRequest $request
+     * @param Client $client
+     * @return RedirectResponse
+     * @throws AuthorizationException
+     */
+    public function update(UpdateCashLoanRequest $request, Client $client): RedirectResponse
     {
-        $client = Client::findOrFail($clientId);
-
-        if ($client->adviser_id !== auth()->id()) {
-            abort(403);
-        }
-
         $cashLoan = $client->cashLoan;
 
-        if (!$cashLoan) {
-            return back()->withErrors(['loan' => 'No Cash Loan found for this client.'])->withInput();
-        }
-
-        $request->validate([
-            'loan_amount' => 'required|numeric|min:0',
-        ]);
+        $this->authorize('update', $cashLoan);
 
         $cashLoan->update([
             'loan_amount' => $request->input('loan_amount'),
         ]);
 
-        return redirect()->route('clients.edit', $client->id)->with('success', 'Cash Loan updated successfully');
+        return redirect()->route('clients.edit', $client->id)
+            ->with('success', 'Cash Loan updated successfully');
     }
 }

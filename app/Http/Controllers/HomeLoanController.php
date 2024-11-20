@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreHomeLoanRequest;
+use App\Http\Requests\UpdateHomeLoanRequest;
 use App\Models\HomeLoan;
 use App\Models\Client;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class HomeLoanController extends Controller
@@ -13,56 +17,43 @@ class HomeLoanController extends Controller
         $this->middleware('auth');
     }
 
-    public function store(Request $request, $clientId)
+    /**
+     * @param StoreHomeLoanRequest $request
+     * @param Client $client
+     * @return RedirectResponse
+     */
+    public function store(StoreHomeLoanRequest $request, Client $client): RedirectResponse
     {
-        $client = Client::findOrFail($clientId);
-
-        if ($client->adviser_id !== auth()->id()) {
-            abort(403);
-        }
-
-        $request->validate([
-            'property_value' => 'required|numeric|min:0',
-            'down_payment' => 'required|numeric|min:0',
-        ]);
-
-        if ($client->homeLoan) {
-            return back()->withErrors(['loan' => 'This client already has a Home Loan.'])->withInput();
-        }
-
-        HomeLoan::create([
-            'client_id' => $client->id,
-            'adviser_id' => auth()->id(),
+        $homeLoan = new HomeLoan([
             'property_value' => $request->input('property_value'),
             'down_payment' => $request->input('down_payment'),
         ]);
+        $homeLoan->client()->associate($client);
+        $homeLoan->adviser()->associate($request->user());
+        $homeLoan->save();
 
-        return redirect()->route('clients.edit', $client->id)->with('success', 'Home Loan created successfully');
+        return redirect()->route('clients.edit', $client->id)
+            ->with('success', 'Home Loan created successfully');
     }
 
-    public function update(Request $request, $clientId)
+    /**
+     * @param UpdateHomeLoanRequest $request
+     * @param Client $client
+     * @return RedirectResponse
+     * @throws AuthorizationException
+     */
+    public function update(UpdateHomeLoanRequest $request, Client $client): RedirectResponse
     {
-        $client = Client::findOrFail($clientId);
-
-        if ($client->adviser_id !== auth()->id()) {
-            abort(403);
-        }
-
         $homeLoan = $client->homeLoan;
 
-        if (!$homeLoan) {
-            return back()->withErrors(['loan' => 'No Home Loan found for this client.'])->withInput();
-        }
-
-        $request->validate([
-            'loan_amount' => 'required|numeric|min:0',
-        ]);
+        $this->authorize('update', $homeLoan);
 
         $homeLoan->update([
             'property_value' => $request->input('property_value'),
             'down_payment' => $request->input('down_payment'),
         ]);
 
-        return redirect()->route('clients.edit', $client->id)->with('success', 'Home Loan updated successfully');
+        return redirect()->route('clients.edit', $client->id)
+            ->with('success', 'Home Loan updated successfully');
     }
 }

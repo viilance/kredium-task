@@ -27,7 +27,7 @@
 
                         <a href="{{ route('clients.index') }}" class="px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-500 focus:outline-none focus:shadow-outline-blue active:bg-blue-600 transition duration-150 ease-in-out">{{ __('Go back to clients') }}</a>
 
-                    <form action="{{ route('clients.update', $client->id) }}" method="POST" class="mt-4">
+                    <form action="{{ route('clients.update', $client) }}" method="POST" class="mt-4">
                         @csrf
                         @method('PUT')
                         <div class="mb-6">
@@ -65,67 +65,85 @@
                     <h3 class="text-xl font-bold mt-10 mb-4">{{ __('Cash Loan Application') }}</h3>
 
                     @if($client->cashLoan)
-                        <form action="{{ route('cash-loans.update', $client->id) }}" method="POST">
+                        <form action="{{ route('cash-loans.update', $client) }}" method="POST">
                             @csrf
                             @method('PUT')
-                            @php
-                                $cashLoan = $client->cashLoan;
-                            @endphp
+                            <div class="mb-6">
+                                <label class="block text-gray-800 font-bold mb-2" for="loan_amount">
+                                    {{ __('Loan Amount') }}
+                                </label>
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="loan_amount" name="loan_amount" value="{{ old('loan_amount', $client->cashLoan->loan_amount ?? '') }}" type="number" min="0" required>
+                            </div>
+                            <div class="justify-end grid">
+                                <button class="px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-500 focus:outline-none focus:shadow-outline-blue active:bg-blue-600 transition duration-150 ease-in-out" type="submit">
+                                    {{ 'Update Cash Loan' }}
+                                </button>
+                            </div>
+                        </form>
                     @else
-                        <form action="{{ route('cash-loans.store', $client->id) }}" method="POST">
+                        <form action="{{ route('cash-loans.store', $client) }}" method="POST">
                             @csrf
-                            @php
-                                $cashLoan = null;
-                            @endphp
+                            <div class="mb-6">
+                                <label class="block text-gray-800 font-bold mb-2" for="loan_amount">
+                                    {{ __('Loan Amount') }}
+                                </label>
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="loan_amount" name="loan_amount" value="{{ old('loan_amount') }}" type="number" min="0" required>
+                            </div>
+                            <div class="justify-end grid">
+                                <button class="px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-500 focus:outline-none focus:shadow-outline-blue active:bg-blue-600 transition duration-150 ease-in-out" type="submit">
+                                    {{ 'Create Cash Loan' }}
+                                </button>
+                            </div>
+                        </form>
                     @endif
-                        <div class="mb-6">
-                            <label class="block text-gray-800 font-bold mb-2" for="loan_amount">
-                                {{ __('Loan Amount') }}
-                            </label>
-                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="loan_amount" name="loan_amount" value="{{ old('loan_amount', $cashLoan->loan_amount ?? '') }}" type="number" min="0" required>
-                        </div>
-                        <div class="justify-end grid">
-                            <button class="px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-500 focus:outline-none focus:shadow-outline-blue active:bg-blue-600 transition duration-150 ease-in-out" type="submit">
-                                {{ $client->cashLoan ? 'Update Cash Loan' : 'Create Cash Loan' }}
-                            </button>
-                        </div>
-                    </form>
 
                     <!-- Home Loan Form -->
                     <h3 class="text-xl font-bold mt-10 mb-4">{{ __('Home Loan Application') }}</h3>
 
                     @if($client->homeLoan)
-                        <form action="{{ route('home-loans.update', $client->id) }}" method="POST">
+                        <form action="{{ route('home-loans.update', $client) }}" method="POST">
                             @csrf
                             @method('PUT')
-                            @php
-                                $homeLoan = $client->homeLoan;
-                            @endphp
-                    @else
-                        <form action="{{ route('home-loans.store', $client->id) }}" method="POST">
-                            @csrf
-                            @php
-                                $homeLoan = null;
-                            @endphp
-                    @endif
                             <div class="mb-6">
                                 <label class="block text-gray-800 font-bold mb-2" for="property_value">
                                     {{ __('Property Value') }}
                                 </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="property_value" name="property_value" value="{{ old('property_value', $homeLoan->property_value ?? '') }}" type="number" min="0" required>
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="property_value" name="property_value" value="{{ old('property_value', $client->homeLoan->property_value ?? '') }}" type="number" min="0" required>
                             </div>
                             <div class="mb-6">
                                 <label class="block text-gray-800 font-bold mb-2" for="down_payment">
                                     {{ __('Down Payment') }}
                                 </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="down_payment" name="down_payment" value="{{ old('down_payment', $homeLoan->down_payment ?? '') }}" type="number" min="0" required>
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="down_payment" name="down_payment" value="{{ old('down_payment', $client->homeLoan->down_payment ?? '') }}" type="number" min="0" required>
                             </div>
                             <div class="justify-end grid">
                                 <button class="px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-500 focus:outline-none focus:shadow-outline-blue active:bg-blue-600 transition duration-150 ease-in-out" type="submit">
-                                    {{ $client->cashLoan ? 'Update Home Loan' : 'Create Home Loan' }}
+                                    {{ 'Update Home Loan'}}
                                 </button>
                             </div>
                         </form>
+                    @else
+                        <form action="{{ route('home-loans.store', $client) }}" method="POST">
+                            @csrf
+                            <div class="mb-6">
+                                <label class="block text-gray-800 font-bold mb-2" for="property_value">
+                                    {{ __('Property Value') }}
+                                </label>
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="property_value" name="property_value" value="{{ old('property_value') }}" type="number" min="0" required>
+                            </div>
+                            <div class="mb-6">
+                                <label class="block text-gray-800 font-bold mb-2" for="down_payment">
+                                    {{ __('Down Payment') }}
+                                </label>
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="down_payment" name="down_payment" value="{{ old('down_payment') }}" type="number" min="0" required>
+                            </div>
+                            <div class="justify-end grid">
+                                <button class="px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-500 focus:outline-none focus:shadow-outline-blue active:bg-blue-600 transition duration-150 ease-in-out" type="submit">
+                                    {{ 'Create Home Loan' }}
+                                </button>
+                            </div>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>

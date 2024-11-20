@@ -2,66 +2,53 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CashLoan;
-use App\Models\Client;
-use App\Models\HomeLoan;
-use Illuminate\Http\Request;
+use App\Repositories\ProductRepository;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReportController extends Controller
 {
-    public function __construct()
+    protected ProductRepository $productRepository;
+
+    /**
+     * @param ProductRepository $productRepository
+     */
+    public function __construct(ProductRepository $productRepository)
     {
         $this->middleware('auth');
+        $this->productRepository = $productRepository;
     }
 
-    public function index()
+    /**
+     * @return View
+     */
+    public function index(): View
     {
-        $adviserId = auth()->id();
+        $adviserId = Auth::id();
 
-        $cashLoans = CashLoan::where('adviser_id', $adviserId)
-            ->select('id', 'loan_amount as product_value', 'created_at')
-            ->addSelect(\DB::raw("'Cash Loan' as product_type"))
-            ->addSelect(\DB::raw('NULL as down_payment'))
-            ->get();
-
-        $homeLoans = HomeLoan::where('adviser_id', $adviserId)
-            ->select('id', 'property_value', 'down_payment', 'created_at')
-            ->addSelect(\DB::raw("'Home Loan' as product_type"))
-            ->addSelect(\DB::raw('property_value - down_payment as product_value'))
-            ->get();
-
-        $products = $cashLoans->toBase()->merge($homeLoans)->sortByDesc('created_at');
+        $products = $this->productRepository->getProductsByAdviser($adviserId);
 
         return view('reports.index', compact('products'));
     }
 
-    public function export()
+    /**
+     * @return BinaryFileResponse
+     */
+    public function export(): BinaryFileResponse
     {
-        $adviserId = auth()->id();
+        $adviserId = Auth::id();
 
-        // Retrieve products as before
-        $cashLoans = CashLoan::where('adviser_id', $adviserId)
-            ->select('id', 'loan_amount as product_value', 'created_at')
-            ->addSelect(\DB::raw("'Cash Loan' as product_type"))
-            ->addSelect(\DB::raw('NULL as down_payment'))
-            ->get();
-
-        $homeLoans = HomeLoan::where('adviser_id', $adviserId)
-            ->select('id', 'property_value', 'down_payment', 'created_at')
-            ->addSelect(\DB::raw("'Home Loan' as product_type"))
-            ->addSelect(\DB::raw('property_value - down_payment as product_value'))
-            ->get();
-
-        $products = $cashLoans->toBase()->merge($homeLoans)->sortByDesc('created_at');
+        $products = $this->productRepository->getProductsByAdviser($adviserId);
 
         $csvData = [];
         $csvData[] = ['Product Type', 'Product Value', 'Creation Date'];
 
         foreach ($products as $product) {
             $csvData[] = [
-                $product->product_type,
-                $product->product_value,
-                $product->created_at->format('Y-m-d'),
+                $product->productType,
+                $product->productValue,
+                $product->createdAt->format('Y-m-d'),
             ];
         }
 

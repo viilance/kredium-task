@@ -47,4 +47,9 @@ class Adviser extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function isAdviser(): true
+    {
+        return true;
+    }
 }

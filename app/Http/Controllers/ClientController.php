@@ -2,8 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreClientRequest;
+use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
-use Illuminate\Http\Request;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
+use Illuminate\Foundation\Application;
+use Illuminate\Http\RedirectResponse;
 
 class ClientController extends Controller
 {
@@ -12,97 +18,87 @@ class ClientController extends Controller
         $this->middleware('auth');
     }
 
-    public function index()
+    /**
+     * @return Factory|View|Application
+     */
+    public function index(): Factory|View|Application
     {
         $clients = Client::with(['cashLoan', 'homeLoan'])->get();
 
         return view('clients.index', compact('clients'));
     }
 
-    public function create()
+    /**
+     * @return Factory|View|Application
+     * @throws AuthorizationException
+     */
+    public function create(): Factory|View|Application
     {
+        $this->authorize('create', Client::class);
+
         return view('clients.create');
     }
 
-    public function store(Request $request)
+    /**
+     * @param StoreClientRequest $request
+     * @return RedirectResponse
+     */
+    public function store(StoreClientRequest  $request): RedirectResponse
     {
-        $request->validate([
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'email' => 'nullable|email|max:150',
-            'phone' => 'nullable|string|max:50',
-        ]);
+        $adviser = $request->user();
 
-        if (empty($request->email) && empty($request->phone)) {
-            return back()->withErrors(['contact' => 'At least an email or a phone number is required.'])->withInput();
-        }
-
-        auth()->user()->clients()->create($request->only('first_name', 'last_name', 'email', 'phone'));
+        $adviser->clients()->create($request->validated());
 
         return redirect()->route('clients.index')->with('success', 'Client created successfully.');
     }
 
-    public function show($id)
+    /**
+     * @param Client $client
+     * @return Factory|View|Application
+     * @throws AuthorizationException
+     */
+    public function show(Client $client): Application|View|Factory
     {
-        $client = Client::findOrFail($id);
-
-        if (!$this->isClientAssociatedWithAdviser($client)) {
-            abort(403);
-        }
+        $this->authorize('view', $client);
 
         return view('clients.show', compact('client'));
     }
 
-    public function edit($id)
+    /**
+     * @param Client $client
+     * @return Factory|View|Application
+     * @throws AuthorizationException
+     */
+    public function edit(Client $client): Application|View|Factory
     {
-        $client = Client::findOrFail($id);
-
-        if (!$this->isClientAssociatedWithAdviser($client)) {
-            abort(403);
-        }
+        $this->authorize('update', $client);
 
         return view('clients.edit', compact('client'));
     }
 
-    public function update(Request $request, $id)
+    /**
+     * @param UpdateClientRequest $request
+     * @param Client $client
+     * @return RedirectResponse
+     */
+    public function update(UpdateClientRequest $request, Client $client): RedirectResponse
     {
-        $client = Client::findOrFail($id);
-
-        if (!$this->isClientAssociatedWithAdviser($client)) {
-            abort(403);
-        }
-
-        $request->validate([
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'email' => 'nullable|email|max:150',
-            'phone' => 'nullable|string|max:50',
-        ]);
-
-        if (empty($request->email) && empty($request->phone)) {
-            return back()->withErrors(['contact' => 'At least an email or a phone number is required.']);
-        }
-
-        $client->update($request->only('name', 'email', 'phone'));
+        $client->update($request->validated());
 
         return redirect()->route('clients.index')->with('success', 'Client updated successfully.');
     }
 
-    public function destroy($id)
+    /**
+     * @param Client $client
+     * @return RedirectResponse
+     * @throws AuthorizationException
+     */
+    public function destroy(Client $client): RedirectResponse
     {
-        $client = Client::findOrFail($id);
-
-        if (!$this->isClientAssociatedWithAdviser($client)) {
-            abort(403);
-        }
+        $this->authorize('delete', $client);
 
         $client->delete();
 
         return redirect()->route('clients.index')->with('success', 'Client deleted successfully.');
-    }
-
-    private function isClientAssociatedWithAdviser(Client $client): bool
-    {
-        return $client->adviser_id === auth()->id();
     }
 }
